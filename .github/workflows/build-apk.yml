@@ -27,16 +27,422 @@ jobs:
           mkdir -p app/src/main/java/com/engineering/biomasscalc app/src/main/assets
           printf 'rootProject.name = "BiomassSteamCalc"\ninclude(":app")\n' > settings.gradle
           printf 'buildscript {\n  repositories { google(); mavenCentral() }\n  dependencies { classpath "com.android.tools.build:gradle:8.2.2" }\n}\nallprojects { repositories { google(); mavenCentral() } }\n' > build.gradle
-          printf 'plugins { id "com.android.application" }\nandroid {\n  namespace "com.engineering.biomasscalc"\n  compileSdk 34\n  defaultConfig {\n    applicationId "com.engineering.biomasscalc"\n    minSdk 24\n    targetSdk 34\n    versionCode 1\n    versionName "1.0"\n  }\n  buildTypes { release { minifyEnabled false } }\n}\n' > app/build.gradle
+          printf 'plugins { id "com.android.application" }\nandroid {\n  namespace "com.engineering.biomasscalc"\n  compileSdk 34\n  defaultConfig {\n    applicationId "com.engineering.biomasscalc"\n    minSdk 24\n    targetSdk 34\n    versionCode 2\n    versionName "1.1"\n  }\n  buildTypes { release { minifyEnabled false } }\n}\n' > app/build.gradle
           printf '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n  <application android:allowBackup="true" android:label="Biomass Steam Calc" android:theme="@android:style/Theme.NoTitleBar">\n    <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">\n      <intent-filter>\n        <action android:name="android.intent.action.MAIN" />\n        <category android:name="android.intent.category.LAUNCHER" />\n      </intent-filter>\n    </activity>\n  </application>\n</manifest>\n' > app/src/main/AndroidManifest.xml
-          printf 'package com.engineering.biomasscalc;\nimport android.app.Activity;\nimport android.os.Bundle;\nimport android.webkit.WebSettings;\nimport android.webkit.WebView;\nimport android.webkit.WebViewClient;\npublic class MainActivity extends Activity {\n  @Override protected void onCreate(Bundle savedInstanceState) {\n    super.onCreate(savedInstanceState);\n    WebView w = new WebView(this);\n    WebSettings s = w.getSettings();\n    s.setJavaScriptEnabled(true);\n    s.setDomStorageEnabled(true);\n    s.setAllowFileAccess(true);\n    w.setWebViewClient(new WebViewClient());\n    w.loadUrl("file:///android_asset/index.html");\n    setContentView(w);\n  }\n}\n' > app/src/main/java/com/engineering/biomasscalc/MainActivity.java
-          if [ -f "Biomass_Boiler_Mobile_App.html" ]; then
-            cp Biomass_Boiler_Mobile_App.html app/src/main/assets/index.html
-          elif [ -f "index.html" ]; then
-            cp index.html app/src/main/assets/index.html
-          else
-            echo "HTML file not found!" && ls -la && exit 1
-          fi
+
+          cat << 'EOF' > app/src/main/java/com/engineering/biomasscalc/MainActivity.java
+          package com.engineering.biomasscalc;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  WebView w = new WebView(this);
+                  WebSettings s = w.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(true);
+                  w.setWebViewClient(new WebViewClient());
+                  w.setWebChromeClient(new WebChromeClient());
+                  w.loadUrl("file:///android_asset/index.html");
+                  setContentView(w);
+              }
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/assets/index.html
+          <!DOCTYPE html>
+          <html lang="th">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <title>Biomass Steam Calc</title>
+          <style>
+            :root { --bg:#0f172a; --surface:#1e293b; --surface-2:#283548; --border:#334155; --text:#f8fafc; --muted:#94a3b8; --c10:#38bdf8; --c16:#34d399; --warn:#fbbf24; --danger:#f87171; --primary:#3b82f6; }
+            * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+            body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); padding-bottom:78px; line-height:1.45; }
+            .sticky-top { position:sticky; top:0; z-index:30; background:rgba(15,23,42,0.97); border-bottom:1px solid var(--border); padding:10px 14px; }
+            .app-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+            .app-title { font-size:0.95rem; font-weight:700; color:#fff; }
+            .top-btns { display:flex; gap:6px; }
+            .icon-btn { background:var(--surface-2); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:8px; font-size:0.78rem; font-weight:600; }
+            .live-strip { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+            .live-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:7px 8px; text-align:center; }
+            .live-card.active-10 { border-color:var(--c10); background:rgba(56,189,248,0.12); }
+            .live-card.active-16 { border-color:var(--c16); background:rgba(52,211,153,0.12); }
+            .live-lbl { font-size:0.68rem; color:var(--muted); font-weight:600; }
+            .live-val { font-size:1.25rem; font-weight:800; line-height:1.15; margin-top:1px; }
+            .live-sub { font-size:0.66rem; color:var(--muted); }
+            .main { padding:12px 14px; max-width:600px; margin:0 auto; }
+            .tab-view { display:none; }
+            .tab-view.active { display:block; }
+            .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; }
+            .card-title { font-size:0.9rem; font-weight:700; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+            .hero-box { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+            .hero-row { display:flex; justify-content:space-between; align-items:baseline; }
+            .hero-num { font-size:2.35rem; font-weight:800; line-height:1; }
+            .hero-unit { font-size:0.9rem; color:var(--muted); font-weight:600; }
+            .load-badge { font-size:0.82rem; font-weight:700; padding:4px 10px; border-radius:8px; background:var(--surface-2); }
+            .bar-bg { height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden; margin:10px 0 8px; }
+            .bar-fill { height:100%; border-radius:99px; transition:width 0.2s; }
+            .formula-txt { font-family:monospace; font-size:0.76rem; color:var(--muted); background:rgba(30,41,59,0.8); padding:6px 8px; border-radius:6px; word-break:break-all; }
+            .metrics-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+            .m-item { background:rgba(15,23,42,0.55); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; }
+            .m-item .k { font-size:0.68rem; color:var(--muted); }
+            .m-item .v { font-size:0.92rem; font-weight:700; margin-top:2px; }
+            .stepper-row { display:grid; grid-template-columns:50px 1fr 50px; gap:8px; align-items:center; margin-bottom:10px; }
+            .step-btn { height:48px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:#fff; font-size:1.4rem; font-weight:700; }
+            .step-btn:active { background:var(--primary); }
+            .input-box { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:4px 10px; text-align:center; }
+            .input-box label { display:block; font-size:0.68rem; color:var(--muted); }
+            .input-box input { width:100%; background:transparent; border:none; color:#fff; font-size:1.15rem; font-weight:700; text-align:center; outline:none; }
+            .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+            select, .std-input { width:100%; height:44px; background:var(--bg); border:1px solid var(--border); color:#fff; border-radius:10px; padding:0 10px; font-size:0.92rem; font-weight:600; }
+            input[type="range"] { width:100%; height:30px; accent-color:var(--primary); margin:4px 0 8px; }
+            .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+            .chip { background:var(--surface-2); border:1px solid var(--border); color:var(--muted); padding:7px 10px; border-radius:8px; font-size:0.76rem; font-weight:600; }
+            .chip:active { border-color:var(--primary); color:#fff; }
+            .action-btn { width:100%; height:46px; border-radius:10px; border:none; background:var(--primary); color:#fff; font-size:0.95rem; font-weight:700; margin-top:6px; }
+            .action-btn.green { background:#059669; }
+            .action-btn.red { background:rgba(248,113,113,0.18); color:var(--danger); border:1px solid rgba(248,113,113,0.4); }
+            .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:64px; background:var(--surface); border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(4,1fr); z-index:40; }
+            .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); font-size:0.72rem; font-weight:600; border:none; background:transparent; gap:2px; }
+            .nav-item.active { color:var(--c10); background:rgba(56,189,248,0.1); }
+            .nav-item.active.t16 { color:var(--c16); background:rgba(52,211,153,0.1); }
+            .nav-icon { font-size:1.15rem; }
+            .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:60; padding:16px; align-items:center; justify-content:center; }
+            .modal-bg.open { display:flex; }
+            .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:480px; max-height:82vh; display:flex; flex-direction:column; }
+            .modal-hdr { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
+            .modal-cnt { overflow-y:auto; padding:10px 14px; }
+            table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+            th, td { padding:8px 6px; border-bottom:1px solid var(--border); text-align:center; }
+            th { color:var(--muted); }
+          </style>
+          </head>
+          <body>
+            <div class="sticky-top">
+              <div class="app-bar">
+                <div class="app-title">Biomass Steam Calc</div>
+                <div class="top-btns">
+                  <button type="button" class="icon-btn" onclick="openRef()">ตาราง Hz</button>
+                  <button type="button" class="icon-btn" onclick="resetDefaults()">รีเซ็ต</button>
+                  <button type="button" class="icon-btn" style="background:var(--primary);border-color:var(--primary);" onclick="saveLog()">+ บันทึก</button>
+                </div>
+              </div>
+              <div class="live-strip">
+                <div class="live-card active-10" id="top-card-10" onclick="switchTab('tab10', 0)">
+                  <div class="live-lbl">10.5 TPH</div>
+                  <div class="live-val" style="color:var(--c10);" id="top-st-10">6.54</div>
+                  <div class="live-sub" id="top-ld-10">62.3% Load</div>
+                </div>
+                <div class="live-card" id="top-card-16" onclick="switchTab('tab16', 1)">
+                  <div class="live-lbl">16.0 TPH (×2)</div>
+                  <div class="live-val" style="color:var(--c16);" id="top-st-16">1.80</div>
+                  <div class="live-sub" id="top-ld-16">11.2% Load</div>
+                </div>
+                <div class="live-card">
+                  <div class="live-lbl">รวมไอน้ำ (TPH)</div>
+                  <div class="live-val" id="top-st-tot">8.34</div>
+                  <div class="live-sub" id="top-fl-tot">1,584 kg/h</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="main">
+              <div id="tab10" class="tab-view active">
+                <div class="card" style="border-top:3px solid var(--c10);">
+                  <div class="card-title"><span>Biomass Boiler 10.5 TPH</span><span style="font-size:0.74rem;color:var(--c10);">1 Grate | กว้าง 1.55 m</span></div>
+                  <div class="hero-box">
+                    <div class="hero-row">
+                      <div><span class="hero-num" style="color:var(--c10);" id="st-10">6.54</span> <span class="hero-unit">TPH</span></div>
+                      <div class="load-badge" id="ld-10">62.3% Load</div>
+                    </div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-10" style="width:62.3%;background:var(--c10);"></div></div>
+                    <div class="formula-txt" id="fm-10">(1.55 × 7.16 × 0.20 × 560) / 190 = 6.54 TPH</div>
+                  </div>
+                  <div class="metrics-3">
+                    <div class="m-item"><div class="k">เชื้อเพลิง/ชม.</div><div class="v" id="fk-10">1,243 kg</div></div>
+                    <div class="m-item"><div class="k">เชื้อเพลิง/วัน</div><div class="v" id="fd-10">29.83 T</div></div>
+                    <div class="m-item"><div class="k">รอบมอเตอร์</div><div class="v" id="rp-10">11.93 RPM</div></div>
+                  </div>
+                  <div class="card-title" style="margin-top:8px;"><span>1. ความเร็ว Stoker</span><span style="font-size:0.75rem;color:var(--muted);">5–60 Hz</span></div>
+                  <div class="stepper-row">
+                    <button type="button" class="step-btn" onclick="stepHz('10', -1)">−</button>
+                    <div class="input-box"><label>ความถี่ Stoker (Hz)</label><input type="number" id="hz-10" step="0.5" value="53.00" oninput="onHz('10')"></div>
+                    <button type="button" class="step-btn" onclick="stepHz('10', 1)">+</button>
+                  </div>
+                  <input type="range" id="rng-10" min="5" max="60" step="1" value="53" oninput="onRng('10')">
+                  <div class="grid-2">
+                    <div><label style="font-size:0.72rem;color:var(--muted);">เลือกจากตารางมาตรฐาน</label><select id="sel-10" onchange="onSel('10')"></select></div>
+                    <div><label style="font-size:0.72rem;color:var(--muted);">ความเร็วสายพาน (m/hr)</label><input type="number" class="std-input" id="spd-10" step="0.01" value="7.16" oninput="onSpd('10')"></div>
+                  </div>
+                  <div class="card-title" style="margin-top:14px;"><span>2. ความหนาเชื้อเพลิง & Density</span></div>
+                  <div class="stepper-row">
+                    <button type="button" class="step-btn" onclick="stepThk('10', -10)">−</button>
+                    <div class="input-box"><label>ความหนาเชื้อเพลิง (mm)</label><input type="number" id="mm-10" step="5" value="200" oninput="onMM('10')"></div>
+                    <button type="button" class="step-btn" onclick="stepThk('10', 10)">+</button>
+                  </div>
+                  <div class="grid-2">
+                    <div><label style="font-size:0.72rem;color:var(--muted);">ความหนา (เมตร - m)</label><input type="number" class="std-input" id="m-10" step="0.01" value="0.20" oninput="onM('10')"></div>
+                    <div><label style="font-size:0.72rem;color:var(--muted);">Density (kg/m³)</label><input type="number" class="std-input" id="den-10" step="5" value="560" oninput="calcAll()"></div>
+                  </div>
+                  <div class="chips">
+                    <span class="chip" onclick="setDen('10', 560)">Pellet (560)</span>
+                    <span class="chip" onclick="setDen('10', 520)">Pellet เบา (520)</span>
+                    <span class="chip" onclick="setDen('10', 320)">ไม้สับ (320)</span>
+                    <span class="chip" onclick="setDen('10', 620)">กะลาปาล์ม (620)</span>
+                  </div>
+                  <details style="margin-top:14px;background:rgba(15,23,42,0.4);padding:10px;border-radius:10px;border:1px dashed var(--border);">
+                    <summary style="font-size:0.8rem;font-weight:700;color:var(--muted);">ตั้งค่าคงที่เตา 10.5T (กว้าง 1.55m / Eff 190)</summary>
+                    <div class="grid-2" style="margin-top:8px;">
+                      <div><label style="font-size:0.7rem;color:var(--muted);">หน้ากว้าง (m)</label><input type="number" class="std-input" id="wid-10" step="0.01" value="1.55" oninput="calcAll()"></div>
+                      <div><label style="font-size:0.7rem;color:var(--muted);">ประสิทธิภาพ (kg/T.steam)</label><input type="number" class="std-input" id="eff-10" step="1" value="190" oninput="calcAll()"></div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              <div id="tab16" class="tab-view">
+                <div class="card" style="border-top:3px solid var(--c16);">
+                  <div class="card-title"><span>Biomass Boiler 16.0 TPH</span><span style="font-size:0.74rem;color:var(--c16);">2 Chain Grates (1.27 m × 2)</span></div>
+                  <div class="hero-box">
+                    <div class="hero-row">
+                      <div><span class="hero-num" style="color:var(--c16);" id="st-16">1.80</span> <span class="hero-unit">TPH</span></div>
+                      <div class="load-badge" id="ld-16">11.2% Load</div>
+                    </div>
+                    <div class="bar-bg"><div class="bar-fill" id="bar-16" style="width:11.2%;background:var(--c16);"></div></div>
+                    <div class="formula-txt" id="fm-16">((1.27 × 2.00 × 0.12 × 560) / 190) × 2 = 1.80 TPH</div>
+                  </div>
+                  <div class="metrics-3">
+                    <div class="m-item"><div class="k">เชื้อเพลิงรวม 2 ชุด</div><div class="v" id="fk-16">341 kg</div></div>
+                    <div class="m-item"><div class="k">เชื้อเพลิง/วัน</div><div class="v" id="fd-16">8.19 T</div></div>
+                    <div class="m-item"><div class="k">รอบมอเตอร์</div><div class="v" id="rp-16">3.33 RPM</div></div>
+                  </div>
+                  <div class="card-title" style="margin-top:8px;"><span>1. ความเร็ว Stoker (ต่อ 1 ชุด)</span><span style="font-size:0.75rem;color:var(--muted);">5–60 Hz</span></div>
+                  <div class="stepper-row">
+                    <button type="button" class="step-btn" onclick="stepHz('16', -1)">−</button>
+                    <div class="input-box"><label>ความถี่ Stoker (Hz)</label><input type="number" id="hz-16" step="0.5" value="14.81" oninput="onHz('16')"></div>
+                    <button type="button" class="step-btn" onclick="stepHz('16', 1)">+</button>
+                  </div>
+                  <input type="range" id="rng-16" min="5" max="60" step="1" value="15" oninput="onRng('16')">
+                  <div class="grid-2">
+                    <div><label style="font-size:0.72rem;color:var(--muted);">เลือกจากตารางมาตรฐาน</label><select id="sel-16" onchange="onSel('16')"></select></div>
+                    <div><label style="font-size:0.72rem;color:var(--muted);">ความเร็วสายพาน (m/hr)</label><input type="number" class="std-input" id="spd-16" step="0.01" value="2.00" oninput="onSpd('16')"></div>
+                  </div>
+                  <div class="card-title" style="margin-top:14px;"><span>2. ความหนาเชื้อเพลิง & Density</span></div>
+                  <div class="stepper-row">
+                    <button type="button" class="step-btn" onclick="stepThk('16', -10)">−</button>
+                    <div class="input-box"><label>ความหนาเชื้อเพลิง (mm)</label><input type="number" id="mm-16" step="5" value="120" oninput="onMM('16')"></div>
+                    <button type="button" class="step-btn" onclick="stepThk('16', 10)">+</button>
+                  </div>
+                  <div class="grid-2">
+                    <div><label style="font-size:0.72rem;color:var(--muted);">ความหนา (เมตร - m)</label><input type="number" class="std-input" id="m-16" step="0.01" value="0.12" oninput="onM('16')"></div>
+                    <div><label style="font-size:0.72rem;color:var(--muted);">Density (kg/m³)</label><input type="number" class="std-input" id="den-16" step="5" value="560" oninput="calcAll()"></div>
+                  </div>
+                  <div class="chips">
+                    <span class="chip" onclick="setDen('16', 560)">Pellet (560)</span>
+                    <span class="chip" onclick="setDen('16', 520)">Pellet เบา (520)</span>
+                    <span class="chip" onclick="setDen('16', 320)">ไม้สับ (320)</span>
+                    <span class="chip" onclick="setDen('16', 620)">กะลาปาล์ม (620)</span>
+                  </div>
+                  <details style="margin-top:14px;background:rgba(15,23,42,0.4);padding:10px;border-radius:10px;border:1px dashed var(--border);">
+                    <summary style="font-size:0.8rem;font-weight:700;color:var(--muted);">ตั้งค่าคงที่เตา 16.0T (กว้าง 1.27m × 2 / Eff 190)</summary>
+                    <div class="grid-2" style="margin-top:8px;">
+                      <div><label style="font-size:0.7rem;color:var(--muted);">หน้ากว้าง/ชุด (m)</label><input type="number" class="std-input" id="wid-16" step="0.01" value="1.27" oninput="calcAll()"></div>
+                      <div><label style="font-size:0.7rem;color:var(--muted);">ประสิทธิภาพ (kg/T.steam)</label><input type="number" class="std-input" id="eff-16" step="1" value="190" oninput="calcAll()"></div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              <div id="tabRev" class="tab-view">
+                <div class="card">
+                  <div class="card-title"><span>คำนวณย้อนกลับจากเป้าหมายไอน้ำ</span></div>
+                  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">ป้อนจำนวนตันไอน้ำ (TPH) ที่ต้องการ ระบบจะคำนวณความถี่ Hz ที่ต้องตั้ง ณ ความหนาเชื้อเพลิงปัจจุบัน</p>
+                  <div class="grid-2">
+                    <div><label style="font-size:0.72rem;color:var(--muted);">เลือกหม้อไอน้ำ</label><select id="rev-id" onchange="calcRev()"><option value="10">Biomass 10.5 TPH</option><option value="16">Biomass 16.0 TPH (×2)</option></select></div>
+                    <div><label style="font-size:0.72rem;color:var(--muted);">เป้าหมายไอน้ำ (TPH)</label><input type="number" class="std-input" id="rev-tph" step="0.1" value="8.0" oninput="calcRev()"></div>
+                  </div>
+                  <div id="rev-box" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;font-size:0.88rem;"></div>
+                  <button type="button" class="action-btn" onclick="applyRev()">นำค่า Hz นี้ไปตั้งค่าในเตา</button>
+                </div>
+              </div>
+
+              <div id="tabLog" class="tab-view">
+                <div class="card">
+                  <div class="card-title"><span>ประวัติการบันทึกค่า</span><span style="font-size:0.75rem;color:var(--muted);" id="log-cnt">0 รายการ</span></div>
+                  <div class="grid-2">
+                    <button type="button" class="action-btn green" style="margin-top:0;" onclick="copyLogs()">คัดลอกข้อมูลวางใน Excel</button>
+                    <button type="button" class="action-btn red" style="margin-top:0;" onclick="clearLogs()">ล้างประวัติทั้งหมด</button>
+                  </div>
+                  <div id="log-list" style="margin-top:12px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <nav class="bottom-nav">
+              <button type="button" class="nav-item active" id="nav-0" onclick="switchTab('tab10', 0)"><span class="nav-icon">🔥</span><span>เตา 10.5T</span></button>
+              <button type="button" class="nav-item" id="nav-1" onclick="switchTab('tab16', 1)"><span class="nav-icon">🏭</span><span>เตา 16.0T</span></button>
+              <button type="button" class="nav-item" id="nav-2" onclick="switchTab('tabRev', 2)"><span class="nav-icon">🎯</span><span>หาค่า Hz</span></button>
+              <button type="button" class="nav-item" id="nav-3" onclick="switchTab('tabLog', 3)"><span class="nav-icon">📋</span><span>บันทึกค่า</span></button>
+            </nav>
+
+            <div class="modal-bg" id="refModal" onclick="if(event.target===this) closeRef()">
+              <div class="modal-box">
+                <div class="modal-hdr"><span>ตารางมาตรฐาน Stoker Speed</span><button type="button" class="icon-btn" onclick="closeRef()">ปิด</button></div>
+                <div class="modal-cnt"><table><thead><tr><th>Hz</th><th>RPM</th><th>Speed (m/h)</th><th>เลือกใช้</th></tr></thead><tbody id="ref-body"></tbody></table></div>
+              </div>
+            </div>
+
+          <script>
+          const STOKER_TABLE = [
+            {hz:5,rpm:1.13,speed:0.68},{hz:10,rpm:2.25,speed:1.35},{hz:15,rpm:3.38,speed:2.03},{hz:20,rpm:4.50,speed:2.70},
+            {hz:25,rpm:5.63,speed:3.38},{hz:26,rpm:5.85,speed:3.51},{hz:27,rpm:6.08,speed:3.65},{hz:28,rpm:6.30,speed:3.78},
+            {hz:29,rpm:6.53,speed:3.92},{hz:30,rpm:6.75,speed:4.05},{hz:31,rpm:6.98,speed:4.19},{hz:32,rpm:7.20,speed:4.32},
+            {hz:33,rpm:7.43,speed:4.46},{hz:34,rpm:7.65,speed:4.59},{hz:35,rpm:7.88,speed:4.73},{hz:36,rpm:8.10,speed:4.86},
+            {hz:37,rpm:8.33,speed:5.00},{hz:38,rpm:8.55,speed:5.13},{hz:39,rpm:8.78,speed:5.27},{hz:40,rpm:9.00,speed:5.40},
+            {hz:41,rpm:9.23,speed:5.54},{hz:42,rpm:9.45,speed:5.67},{hz:43,rpm:9.68,speed:5.81},{hz:44,rpm:9.90,speed:5.94},
+            {hz:45,rpm:10.13,speed:6.08},{hz:46,rpm:10.35,speed:6.21},{hz:47,rpm:10.58,speed:6.35},{hz:48,rpm:10.80,speed:6.48},
+            {hz:49,rpm:11.03,speed:6.62},{hz:50,rpm:11.25,speed:6.75},{hz:51,rpm:11.48,speed:6.89},{hz:52,rpm:11.70,speed:7.02},
+            {hz:53,rpm:11.93,speed:7.16},{hz:54,rpm:12.15,speed:7.29},{hz:55,rpm:12.38,speed:7.43},{hz:56,rpm:12.60,speed:7.56},
+            {hz:57,rpm:12.83,speed:7.70},{hz:58,rpm:13.05,speed:7.83},{hz:59,rpm:13.28,speed:7.97},{hz:60,rpm:13.50,speed:8.10}
+          ];
+          let activeBoiler = '10';
+          function hzToSpeed(hz) { const m = STOKER_TABLE.find(r => Math.abs(r.hz - hz) < 0.01); return m ? m.speed : +(hz * 0.135).toFixed(2); }
+          function hzToRpm(hz) { const m = STOKER_TABLE.find(r => Math.abs(r.hz - hz) < 0.01); return m ? m.rpm : +(hz * 0.225).toFixed(2); }
+          function speedToHz(spd) { const m = STOKER_TABLE.find(r => Math.abs(r.speed - spd) < 0.01); return m ? m.hz : +(spd / 0.135).toFixed(2); }
+          function switchTab(tabId, idx) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+              el.classList.remove('active', 't16');
+              if (i === idx) { el.classList.add('active'); if (idx === 1) el.classList.add('t16'); }
+            });
+            document.getElementById('top-card-10').classList.toggle('active-10', idx === 0);
+            document.getElementById('top-card-16').classList.toggle('active-16', idx === 1);
+            if (idx === 0) activeBoiler = '10';
+            if (idx === 1) activeBoiler = '16';
+          }
+          function init() {
+            ['10', '16'].forEach(id => {
+              const sel = document.getElementById('sel-' + id);
+              sel.innerHTML = '<option value="custom">-- กำหนดเอง --</option>' + STOKER_TABLE.map(r => `<option value="${r.hz}">${r.hz} Hz (${r.speed.toFixed(2)} m/h)</option>`).join('');
+            });
+            document.getElementById('ref-body').innerHTML = STOKER_TABLE.map(r => `<tr><td><b>${r.hz}</b></td><td>${r.rpm.toFixed(2)}</td><td>${r.speed.toFixed(2)}</td><td><button type="button" class="icon-btn" onclick="setHz(activeBoiler, ${r.hz}); closeRef();">เลือกใช้</button></td></tr>`).join('');
+          }
+          function syncHzUI(id, hz) {
+            document.getElementById('hz-' + id).value = hz.toFixed(2);
+            document.getElementById('spd-' + id).value = hzToSpeed(hz).toFixed(2);
+            document.getElementById('rng-' + id).value = Math.min(60, Math.max(5, Math.round(hz)));
+            const m = STOKER_TABLE.find(r => Math.abs(r.hz - hz) < 0.01);
+            document.getElementById('sel-' + id).value = m ? m.hz : 'custom';
+          }
+          function setHz(id, hz) { hz = Math.max(0, Math.min(65, hz)); syncHzUI(id, hz); calcAll(); }
+          function stepHz(id, delta) { const cur = parseFloat(document.getElementById('hz-' + id).value) || 0; setHz(id, Math.round((cur + delta) * 10) / 10); }
+          function onHz(id) { const hz = parseFloat(document.getElementById('hz-' + id).value) || 0; document.getElementById('spd-' + id).value = hzToSpeed(hz).toFixed(2); document.getElementById('rng-' + id).value = Math.min(60, Math.max(5, Math.round(hz))); calcAll(); }
+          function onRng(id) { setHz(id, parseFloat(document.getElementById('rng-' + id).value)); }
+          function onSel(id) { const v = document.getElementById('sel-' + id).value; if (v !== 'custom') setHz(id, parseFloat(v)); }
+          function onSpd(id) { const spd = parseFloat(document.getElementById('spd-' + id).value) || 0; const hz = speedToHz(spd); document.getElementById('hz-' + id).value = hz.toFixed(2); document.getElementById('rng-' + id).value = Math.min(60, Math.max(5, Math.round(hz))); calcAll(); }
+          function stepThk(id, deltaMm) { const cur = parseFloat(document.getElementById('mm-' + id).value) || 0; const next = Math.max(0, cur + deltaMm); document.getElementById('mm-' + id).value = next; document.getElementById('m-' + id).value = (next / 1000).toFixed(2); calcAll(); }
+          function onMM(id) { const mm = parseFloat(document.getElementById('mm-' + id).value) || 0; document.getElementById('m-' + id).value = (mm / 1000).toFixed(2); calcAll(); }
+          function onM(id) { const m = parseFloat(document.getElementById('m-' + id).value) || 0; document.getElementById('mm-' + id).value = Math.round(m * 1000); calcAll(); }
+          function setDen(id, val) { document.getElementById('den-' + id).value = val; calcAll(); }
+          function getData(id) {
+            const rated = id === '10' ? 10.5 : 16.0; const grates = id === '10' ? 1 : 2;
+            const hz = parseFloat(document.getElementById('hz-' + id).value) || 0;
+            const spd = parseFloat(document.getElementById('spd-' + id).value) || 0;
+            const m = parseFloat(document.getElementById('m-' + id).value) || 0;
+            const den = parseFloat(document.getElementById('den-' + id).value) || 0;
+            const wid = parseFloat(document.getElementById('wid-' + id).value) || 0;
+            const eff = parseFloat(document.getElementById('eff-' + id).value) || 190;
+            const fuel = wid * spd * m * den * grates;
+            const steam = eff > 0 ? fuel / eff : 0;
+            const load = (steam / rated) * 100;
+            return { id, rated, grates, hz, spd, m, den, wid, eff, fuel, steam, load, rpm: hzToRpm(hz) };
+          }
+          function calcAll() {
+            const d10 = getData('10'); const d16 = getData('16');
+            [d10, d16].forEach(d => {
+              document.getElementById('st-' + d.id).textContent = d.steam.toFixed(2);
+              document.getElementById('ld-' + d.id).textContent = `${d.load.toFixed(1)}% Load`;
+              const bar = document.getElementById('bar-' + d.id);
+              bar.style.width = `${Math.min(100, d.load)}%`;
+              bar.style.background = d.load > 100 ? 'var(--danger)' : (d.load > 90 ? 'var(--warn)' : (d.id === '10' ? 'var(--c10)' : 'var(--c16)'));
+              document.getElementById('fk-' + d.id).textContent = `${Math.round(d.fuel).toLocaleString()} kg`;
+              document.getElementById('fd-' + d.id).textContent = `${((d.fuel * 24) / 1000).toFixed(2)} T`;
+              document.getElementById('rp-' + d.id).textContent = `${d.rpm.toFixed(2)} RPM`;
+              document.getElementById('fm-' + d.id).textContent = d.grates > 1 ? `((${d.wid} × ${d.spd.toFixed(2)} × ${d.m.toFixed(2)} × ${d.den}) / ${d.eff}) × 2 = ${d.steam.toFixed(2)} TPH` : `(${d.wid} × ${d.spd.toFixed(2)} × ${d.m.toFixed(2)} × ${d.den}) / ${d.eff} = ${d.steam.toFixed(2)} TPH`;
+            });
+            document.getElementById('top-st-10').textContent = d10.steam.toFixed(2);
+            document.getElementById('top-ld-10').textContent = `${d10.load.toFixed(1)}% Load`;
+            document.getElementById('top-st-16').textContent = d16.steam.toFixed(2);
+            document.getElementById('top-ld-16').textContent = `${d16.load.toFixed(1)}% Load`;
+            document.getElementById('top-st-tot').textContent = (d10.steam + d16.steam).toFixed(2);
+            document.getElementById('top-fl-tot').textContent = `${Math.round(d10.fuel + d16.fuel).toLocaleString()} kg/h`;
+            calcRev();
+          }
+          let revSolved = { id: '10', hz: 53 };
+          function calcRev() {
+            const id = document.getElementById('rev-id').value;
+            const target = parseFloat(document.getElementById('rev-tph').value) || 0;
+            const d = getData(id); const reqFuel = target * d.eff; const denom = d.wid * d.m * d.den * d.grates;
+            const reqSpd = denom > 0 ? reqFuel / denom : 0; const reqHz = speedToHz(reqSpd);
+            revSolved = { id, hz: reqHz };
+            const box = document.getElementById('rev-box');
+            if (reqHz > 60) {
+              const minMm = Math.ceil((reqFuel / (d.wid * 8.10 * d.den * d.grates)) * 1000);
+              box.innerHTML = `<div style="color:var(--danger);font-weight:700;">⚠️ เกิน 60 Hz (ต้องใช้ ${reqHz.toFixed(1)} Hz)</div><div style="margin-top:4px;color:var(--warn);">แนะนำเพิ่มความหนาเชื้อเพลิงเป็น <b>${minMm} mm</b> ที่ 60 Hz</div>`;
+            } else {
+              box.innerHTML = `<div>ที่ความหนา <b>${Math.round(d.m*1000)} mm</b>, Density <b>${d.den}</b>:</div><div style="font-size:1.1rem;margin-top:4px;">ตั้งความถี่ = <b style="color:var(--c10);">${reqHz.toFixed(2)} Hz</b> (${reqSpd.toFixed(2)} m/h)</div>`;
+            }
+          }
+          function applyRev() { setHz(revSolved.id, revSolved.hz); switchTab(revSolved.id === '10' ? 'tab10' : 'tab16', revSolved.id === '10' ? 0 : 1); }
+          let logs = [];
+          try { logs = JSON.parse(localStorage.getItem('bm_mobile_logs') || '[]'); } catch(e) {}
+          function renderLogs() {
+            document.getElementById('log-cnt').textContent = `${logs.length} รายการ`;
+            const el = document.getElementById('log-list');
+            if (!logs.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:0.84rem;">ยังไม่มีรายการบันทึก กด "+ บันทึก" ด้านบนขวา</div>'; return; }
+            el.innerHTML = logs.map(l => `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;font-size:0.82rem;"><div style="display:flex;justify-content:space-between;font-weight:700;"><span style="color:${l.id==='10'?'var(--c10)':'var(--c16)'}">${l.name}</span><span>${l.steam} TPH (${l.load}%)</span></div><div style="color:var(--muted);font-size:0.75rem;margin-top:2px;">${l.hz} Hz (${l.spd} m/h) | หนา ${l.mm} mm | Den ${l.den} | เชื้อเพลิง ${l.fuel} kg/h</div><div style="color:#64748b;font-size:0.7rem;margin-top:2px;">${l.time}</div></div>`).join('');
+          }
+          function saveLog() {
+            const t = new Date().toLocaleString('th-TH');
+            ['10', '16'].forEach(id => {
+              const d = getData(id);
+              logs.unshift({ id, time: t, name: id === '10' ? 'Biomass 10.5 TPH' : 'Biomass 16.0 TPH', hz: d.hz.toFixed(2), spd: d.spd.toFixed(2), mm: Math.round(d.m * 1000), den: d.den, fuel: Math.round(d.fuel), steam: d.steam.toFixed(2), load: d.load.toFixed(1) });
+            });
+            try { localStorage.setItem('bm_mobile_logs', JSON.stringify(logs)); } catch(e) {}
+            renderLogs(); alert('บันทึกค่าของทั้ง 2 เตาเรียบร้อยแล้ว');
+          }
+          function clearLogs() { logs = []; try { localStorage.removeItem('bm_mobile_logs'); } catch(e) {} renderLogs(); }
+          function copyLogs() {
+            if (!logs.length) return alert('ยังไม่มีข้อมูลสำหรับคัดลอกครับ');
+            const head = 'Timestamp\tBoiler\tHz\tSpeed_m_h\tThickness_mm\tDensity\tFuel_kg_h\tSteam_TPH\tLoad_Pct';
+            const rows = logs.map(l => `${l.time}\t${l.name}\t${l.hz}\t${l.spd}\t${l.mm}\t${l.den}\t${l.fuel}\t${l.steam}\t${l.load}`);
+            const text = [head].concat(rows).join('\n');
+            if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => alert('คัดลอกตารางแล้ว นำไปกด Paste ในแอป Excel ได้เลยครับ')); }
+            else { alert('คัดลอกไม่สำเร็จ กรุณาดูข้อมูลในหน้านี้'); }
+          }
+          function resetDefaults() {
+            syncHzUI('10', 53.00); document.getElementById('mm-10').value = 200; document.getElementById('m-10').value = '0.20'; document.getElementById('den-10').value = 560; document.getElementById('wid-10').value = '1.55'; document.getElementById('eff-10').value = 190;
+            syncHzUI('16', speedToHz(2.00)); document.getElementById('spd-16').value = '2.00'; document.getElementById('mm-16').value = 120; document.getElementById('m-16').value = '0.12'; document.getElementById('den-16').value = 560; document.getElementById('wid-16').value = '1.27'; document.getElementById('eff-16').value = 190;
+            calcAll();
+          }
+          function openRef() { document.getElementById('refModal').classList.add('open'); }
+          function closeRef() { document.getElementById('refModal').classList.remove('open'); }
+          init(); resetDefaults(); renderLogs();
+          </script>
+          </body>
+          </html>
+          EOF
+
           gradle assembleDebug
 
       - name: Upload APK
