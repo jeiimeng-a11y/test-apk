@@ -15,6 +15,10 @@ jobs:
           distribution: 'temurin'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
       - name: Generate Project & Build APK
         run: |
           mkdir -p app/src/main/java/com/engineering/biomasscalc app/src/main/assets
@@ -79,10 +83,12 @@ jobs:
               }
           }
           EOF
-          cp index.html app/src/main/assets/index.html
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          if [ -f "Biomass_Boiler_Mobile_App.html" ]; then
+            cp Biomass_Boiler_Mobile_App.html app/src/main/assets/index.html
+          else
+            cp index.html app/src/main/assets/index.html
+          fi
+          gradle assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
